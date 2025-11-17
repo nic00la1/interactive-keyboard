@@ -59,7 +59,7 @@ function App() {
       if (shiftActive && /[a-zA-Z]/.test(label)) return label.toUpperCase() // a-zA-Z oznacza litery, które się zmieniają po naciśnięciu SHIFT
       return label
     }
-    return ''
+    return '' // dla klawiszy specjalnych zwróć pusty ciąg
   }
 
   function handleKey(label) {
@@ -84,12 +84,12 @@ function App() {
       if (value.length > 0) {
         setChat(c => [...c, { id, value }]) // Dodaj wiadomość do historii czatu
       }
-      setText('')
+      setText('') // Wyzerowanaie pola tekstowego po wysłaniu wiadomości
       if (shiftActive) setShiftActive(false)
       return
     }
     if (label === 'Caps') {
-      setCapsLock(v => !v)
+      setCapsLock(v => !v) // Przełącz stan CAPS LOCK
       return
     }
     if (label === 'Shift') {
@@ -151,9 +151,10 @@ function App() {
           <div className="row" key={ri}> 
             {row.map((k, ki) => (
               <button
-                key={ki} // klawiszowi przypisany jest unikalny klucz
-                className={['key', k.length > 1 ? 'wide' : ''].join(' ')} // jeśli etykieta klawisza jest długa, nadaj mu klasę "wide", która rozszerza jego szerokość (Etykieta, czyli, nazwa klawisza, np. "Backspace" jest długa)
-                onClick={() => handleKey(k === '\\' ? '\\' : k)} 
+                key={ki}
+                aria-pressed={k === 'Caps' ? capsLock : (k === 'Shift' ? shiftActive : undefined)}
+                className={['key', k.length > 1 ? 'wide' : '', (k === 'Caps' && capsLock) || (k === 'Shift' && shiftActive) ? 'active' : ''].join(' ').trim()}
+                onClick={() => handleKey(k === '\\' ? '\\' : k)}
               >
                 {k}
               </button>

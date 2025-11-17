@@ -108,6 +108,14 @@ button:hover {
     transform: translateY(1px);
 }
 
+/* Visually indicate active toggle keys (CapsLock / Shift) */
+.key.active {
+    background-color: #319ef7;
+    color: #fff;
+    border-color: #0f6fd6;
+    box-shadow: inset 0 -3px 6px rgba(0,0,0,0.12);
+}
+
 /* Zrób spację widzialną dłużej */
 .row button:nth-child(1).space {
     min-width: 160px;
