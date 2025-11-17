@@ -9,11 +9,12 @@ function App() {
   const [capsLock, setCapsLock] = React.useState(false)
   const [shiftActive, setShiftActive] = React.useState(false)
   const [altActive, setAltActive] = React.useState(false)
+  const [pressedKeys, setPressedKeys] = React.useState([]) // array of labels currently pressed (virtual)
   const idRef = React.useRef(1) 
   // idRef ---> dokładnie jeden ref do przechowywania ID wiadomości czatu
 
   // Znaki, które pojawiają się po naciśnięciu klawisza Shift wraz z danym klawiszem
-  const shifted = {
+  const shifted = React.useMemo(() => ({
     '`': '~',
     '1': '!',
     '2': '@',
@@ -35,7 +36,7 @@ function App() {
     ',': '<',
     '.': '>',
     '/': '?'
-  }
+  }), [])
 
   // Alt (AltGr) mapping for Polish diacritics when Alt is active + letter
   const altMap = {
@@ -51,13 +52,13 @@ function App() {
   }
 
   // Układ wierszy (ciągi znaków). Użyj '___________________________' dla długiego klawisza spacji.
-  const rows = [
+  const rows = React.useMemo(() => ([
     ['`','1','2','3','4','5','6','7','8','9','0','-','=','Backspace'],
     ['Tab','Q','W','E','R','T','Y','U','I','O','P','[',']','\\'],
     ['Caps','A','S','D','F','G','H','J','K','L',';','\'','Enter'],
     ['Shift','Z','X','C','V','B','N','M',',','.','/','Shift'],
     ['Ctrl','Alt','___________________________','Alt','Ctrl']
-  ]
+  ]), [])
 
   function computeChar(label) {
     // Zwraca znak do wstawienia zgodnie z zasadami CAPS LOCK/SHIFT
@@ -161,6 +162,55 @@ function App() {
     if (altActive) setAltActive(false)
   }
 
+  // helpers to manage pressedKeys array (use stable label strings)
+  function addPressedKey(label) {
+    setPressedKeys(prev => {
+      if (prev.includes(label)) return prev
+      return [...prev, label]
+    })
+  }
+  function removePressedKey(label) {
+    setPressedKeys(prev => prev.filter(x => x !== label))
+  }
+
+  // build a reverse map for shifted characters to find which key corresponds to a physical char
+  const shiftedReverse = React.useMemo(() => {
+    const rev = {}
+    Object.keys(shifted).forEach(k => {
+      rev[shifted[k]] = k
+    })
+    return rev
+  }, [shifted])
+
+  // list of all rendered labels (from rows) for quick existence check
+  const allLabels = React.useMemo(() => rows.flat(), [rows])
+
+  function labelFromPhysicalEvent(e) {
+    // handle common named keys
+    if (e.key === ' ') return '___________________________'
+    if (e.key === 'Tab') return 'Tab'
+    if (e.key === 'Enter') return 'Enter'
+    if (e.key === 'Backspace') return 'Backspace'
+    if (e.key === 'CapsLock' || e.key === 'Caps') return 'Caps'
+    if (e.key === 'Shift') return 'Shift'
+    if (e.key === 'Alt' || e.key === 'AltGraph' || e.key === 'AltLeft' || e.key === 'AltRight') return 'Alt'
+    if (e.key === 'Control' || e.key === 'Meta') return 'Ctrl'
+
+    // single character keys
+    if (typeof e.key === 'string' && e.key.length === 1) {
+      const ch = e.key
+      // letter
+      if (/[a-zA-Z]/.test(ch)) return ch.toUpperCase()
+      // digit or common punctuation that directly matches a label
+      if (allLabels.includes(ch)) return ch
+      // check shifted reverse mapping (e.g. '!' -> '1')
+      if (shiftedReverse[ch]) return shiftedReverse[ch]
+      // fallback: if label exists uppercased
+      if (allLabels.includes(ch.toUpperCase())) return ch.toUpperCase()
+    }
+    return null
+  }
+
   // send current text as chat message (used by virtual Enter and physical Enter)
   function sendChat() {
     const value = text.trim()
@@ -184,8 +234,12 @@ function App() {
       /* Ignoruj */
     }
 
-    // shift held
-    if (e.shiftKey) setShiftActive(true)
+  // shift held
+  if (e.shiftKey) setShiftActive(true)
+
+  // highlight the corresponding virtual key
+  const label = labelFromPhysicalEvent(e)
+  if (label) addPressedKey(label)
 
     // Tab
     if (e.key === 'Tab') {
@@ -222,6 +276,9 @@ function App() {
   function handleKeyUpPhysical(e) {
     // update shift state when released
     if (e.key === 'Shift') setShiftActive(false)
+    // remove highlight for corresponding virtual key
+    const label = labelFromPhysicalEvent(e)
+    if (label) removePressedKey(label)
     // also update CapsLock in case it toggled on keyup
     try {
       const caps = e.getModifierState && e.getModifierState('CapsLock')
@@ -273,6 +330,7 @@ function App() {
                 const isAlt = k === 'Alt'
                 const classes = ['key', k.length > 1 ? 'wide' : '']
                 if ((isCaps && capsLock) || (isShift && shiftActive) || (isAlt && altActive)) classes.push('active')
+                if (pressedKeys.includes(k)) classes.push('pressed')
 
                 const labelNode = hasShiftedVariant && !isLetterKey ? (
                   <div className="key-label">
@@ -289,6 +347,10 @@ function App() {
                     className={classes.join(' ')}
                     aria-pressed={isCaps ? capsLock : isShift ? shiftActive : isAlt ? altActive : undefined}
                     onClick={() => handleKey(k === '\\' ? '\\' : k)}
+                    onPointerDown={() => addPressedKey(k)}
+                    onPointerUp={() => removePressedKey(k)}
+                    onPointerCancel={() => removePressedKey(k)}
+                    onPointerLeave={() => removePressedKey(k)}
                   >
                     {labelNode}
                   </button>
