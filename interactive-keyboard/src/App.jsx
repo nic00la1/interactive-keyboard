@@ -264,11 +264,24 @@ function App() {
                   if (shiftActive) displayLabel = displayLabel === displayLabel.toLowerCase() ? displayLabel.toUpperCase() : displayLabel.toLowerCase()
                 }
 
+                // For non-letter single-char keys that have shifted variants, prepare a dual-label rendering
+                const hasShiftedVariant = k.length === 1 && Object.prototype.hasOwnProperty.call(shifted, k)
+                const shiftedChar = hasShiftedVariant ? shifted[k] : null
+
                 const isCaps = k === 'Caps'
                 const isShift = k === 'Shift'
                 const isAlt = k === 'Alt'
                 const classes = ['key', k.length > 1 ? 'wide' : '']
                 if ((isCaps && capsLock) || (isShift && shiftActive) || (isAlt && altActive)) classes.push('active')
+
+                const labelNode = hasShiftedVariant && !isLetterKey ? (
+                  <div className="key-label">
+                    <span className="primary">{k}</span>
+                    <span className="secondary">{shiftedChar}</span>
+                  </div>
+                ) : (
+                  displayLabel
+                )
 
                 return (
                   <button
@@ -277,7 +290,7 @@ function App() {
                     aria-pressed={isCaps ? capsLock : isShift ? shiftActive : isAlt ? altActive : undefined}
                     onClick={() => handleKey(k === '\\' ? '\\' : k)}
                   >
-                    {displayLabel}
+                    {labelNode}
                   </button>
                 )
               })}
