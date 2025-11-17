@@ -8,38 +8,43 @@ function App() {
       <div>
         <h1>Klawiatura interaktywna</h1>
         <textarea></textarea>
-        <div className='container-grid'>
+        <div className='keyboard'>
           {/* Rząd 1 - 14 Przycisków*/}
-          <button>`</button>
-          <button>1</button>
-          <button>2</button>
-          <button>3</button>
-          <button>4</button>
-          <button>5</button>
-          <button>6</button>
-          <button>7</button>
-          <button>8</button>
-          <button>9</button>
-          <button>0</button>
-          <button>-</button>
-          <button>=</button>
-          <button>⬅️ Backspace</button>
+          <div className='row'>
+            <button>`</button>
+            <button>1</button>
+            <button>2</button>
+            <button>3</button>
+            <button>4</button>
+            <button>5</button>
+            <button>6</button>
+            <button>7</button>
+            <button>8</button>
+            <button>9</button>
+            <button>0</button>
+            <button>-</button>
+            <button>=</button>
+            <button>⬅️ Backspace</button>
+          </div>
           {/* Rząd 2 - 14 Przycisków*/}
-          <button>TAB</button>
-          <button>Q</button>
-          <button>W</button>
-          <button>E</button>
-          <button>R</button>
-          <button>T</button>
-          <button>Y</button>
-          <button>U</button>
-          <button>I</button>
-          <button>O</button>
-          <button>P</button>
-          <button>[</button>
-          <button>]</button>
-          <button>\</button>
+          <div className='row'>
+            <button>TAB</button>
+            <button>Q</button>
+            <button>W</button>
+            <button>E</button>
+            <button>R</button>
+            <button>T</button>
+            <button>Y</button>
+            <button>U</button>
+            <button>I</button>
+            <button>O</button>
+            <button>P</button>
+            <button>[</button>
+            <button>]</button>
+            <button>\</button>
+        </div>
         {/* Rząd 3 - 13 Przycisków*/}
+        <div className='row'>
           <button>CAPS</button>
           <button>A</button>
           <button>S</button>
@@ -53,8 +58,10 @@ function App() {
           <button>;</button>
           <button>'</button>
           <button>ENTER</button>
+          </div>
         {/* Rząd 4 - 12 Przycisków*/}
-          <button className='grid-column-1'>SHIFT</button>
+        <div className='row'>
+          <button>SHIFT</button>
           <button>Z</button>
           <button>X</button>
           <button>C</button>
@@ -66,12 +73,15 @@ function App() {
           <button>.</button>
           <button>/</button>
           <button>SHIFT</button>
+          </div>
         {/* Rząd 5 - 5 Przycisków*/}
-          <button>CTRL</button>
-          <button>ALT</button>
-          <button>_________________</button>
-          <button>ALT</button>
-          <button>CTRL</button>
+          <div className='row'>
+            <button>CTRL</button>
+            <button>ALT</button>
+            <button>_________________</button>
+            <button>ALT</button>
+            <button>CTRL</button>
+          </div>
         </div>
       </div>
     </>

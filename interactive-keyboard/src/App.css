@@ -1,3 +1,12 @@
+body {
+    font-family: 'Courier New', Courier, monospace;
+}
+
+h1 {
+    text-align: center;
+    color: #0183ee;
+}
+
 /* Pole do wpisywania tekstu */
 textarea {
     width: 100%;
@@ -6,19 +15,31 @@ textarea {
     font-size: 16px;
     padding: 10px;
     box-sizing: border-box;
+    border: 1px solid #0183ee;
+    border-radius: 20px;
 }
 
-.container-grid {
-    display: grid;
-    grid-template-columns: repeat(14, 1fr);
-    gap: 5px;
-    padding: 10px;
+/* Kontener klawiatury -> wycentrowana klawiatura*/
+.keyboard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
-/* Dzięki temu, Shift jest w 4 Rzędzie, a nie w 14 - jak to, przewidywała 
-   powyższa definicja - .container-grid -> a bardziej szczególnie
-   grid-template-columns
-*/
-.grid-column-1 {
-    grid-column: 1 / span 2;
+/* Przycisk */
+button {
+    margin: 3px;
+    padding: 15px 20px;
+    font-size: 14px;
+    cursor: pointer;
+    border: 1px solid #0183ee;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+    transition: background-color 0.3s;
 }
+
+button:hover {
+    background-color: #319ef7;
+    color: white;
+}
+
