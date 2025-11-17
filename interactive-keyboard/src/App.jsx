@@ -1,5 +1,7 @@
 import React from 'react'
 import './App.css'
+import Keyboard from './components/Keyboard'
+import ChatLog from './components/ChatLog'
 
 function App() {
   // Przechowuje aktualny tekst wpisywany przez użytkownika, 
@@ -38,7 +40,7 @@ function App() {
     '/': '?'
   }), [])
 
-  // Alt (AltGr) mapping for Polish diacritics when Alt is active + letter
+  // Alt (AltGr) mapowanie dla polskich znaków diakrytycznych, gdy Alt jest aktywny + litera
   const altMap = {
     a: 'ą',
     c: 'ć',
@@ -162,7 +164,7 @@ function App() {
     if (altActive) setAltActive(false)
   }
 
-  // helpers to manage pressedKeys array (use stable label strings)
+  // funkcje pomocnicze do zarządzania tablicą pressedKeys (używaj stabilnych ciągów etykiet)
   function addPressedKey(label) {
     setPressedKeys(prev => {
       if (prev.includes(label)) return prev
@@ -173,7 +175,7 @@ function App() {
     setPressedKeys(prev => prev.filter(x => x !== label))
   }
 
-  // build a reverse map for shifted characters to find which key corresponds to a physical char
+  // Tworzy odwrotne mapowanie dla shiftowanych znaków, aby znaleźć, który klawisz odpowiada fizycznemu znakowi
   const shiftedReverse = React.useMemo(() => {
     const rev = {}
     Object.keys(shifted).forEach(k => {
@@ -182,11 +184,11 @@ function App() {
     return rev
   }, [shifted])
 
-  // list of all rendered labels (from rows) for quick existence check
+  // Lista wszystkich renderowanych etykiet (z wierszy) do szybkiego sprawdzenia istnienia
   const allLabels = React.useMemo(() => rows.flat(), [rows])
 
   function labelFromPhysicalEvent(e) {
-    // handle common named keys
+    // obsługa popularnych nazwanych klawiszy
     if (e.key === ' ') return '___________________________'
     if (e.key === 'Tab') return 'Tab'
     if (e.key === 'Enter') return 'Enter'
@@ -196,22 +198,22 @@ function App() {
     if (e.key === 'Alt' || e.key === 'AltGraph' || e.key === 'AltLeft' || e.key === 'AltRight') return 'Alt'
     if (e.key === 'Control' || e.key === 'Meta') return 'Ctrl'
 
-    // single character keys
+    // jeśli to pojedynczy znak
     if (typeof e.key === 'string' && e.key.length === 1) {
       const ch = e.key
-      // letter
+      // litera
       if (/[a-zA-Z]/.test(ch)) return ch.toUpperCase()
-      // digit or common punctuation that directly matches a label
+      // cyfrą lub popularnym znakiem interpunkcyjnym, który bezpośrednio odpowiada etykiecie
       if (allLabels.includes(ch)) return ch
-      // check shifted reverse mapping (e.g. '!' -> '1')
+      // sprawdź odwrotne mapowanie shiftowane (np. '!' -> '1')
       if (shiftedReverse[ch]) return shiftedReverse[ch]
-      // fallback: if label exists uppercased
+      // (np. jeśli etykieta jest wielka, a klawisz fizyczny ma małą literę) -> wtedty zwróć wielką literę
       if (allLabels.includes(ch.toUpperCase())) return ch.toUpperCase()
     }
     return null
   }
 
-  // send current text as chat message (used by virtual Enter and physical Enter)
+  // wysyła aktualny tekst jako wiadomość czatu (używane przez wirtualny Enter i fizyczny Enter)
   function sendChat() {
     const value = text.trim()
     const id = idRef.current++
@@ -222,9 +224,8 @@ function App() {
     if (shiftActive) setShiftActive(false)
   }
 
-  // Handlers for physical keyboard input in the textarea
   function handleKeyDownPhysical(e) {
-    // update CapsLock visual state from modifier state
+    // aktualizuje stan wizualny CAPS LOCK z stanu modyfikatora
     try {
       const caps = e.getModifierState && e.getModifierState('CapsLock')
       setCapsLock(Boolean(caps))
@@ -234,10 +235,10 @@ function App() {
       /* Ignoruj */
     }
 
-  // shift held
+  // jeśli SHIFT jest przytrzymany =  to ciągle go używaj --->
   if (e.shiftKey) setShiftActive(true)
 
-  // highlight the corresponding virtual key
+  // podświetl odpowiadający wirtualny klawisz
   const label = labelFromPhysicalEvent(e)
   if (label) addPressedKey(label)
 
@@ -248,21 +249,22 @@ function App() {
       return
     }
 
-    // Space
+    // Spacja
     if (e.code === 'Space' || e.key === ' ') {
       e.preventDefault()
       setText(t => t + ' ')
       return
     }
 
-    // Alt + letter => diacritic map
+    // Alt + litera (ą, ć, ę, ł, ń, ó, ś, ż, ź)
     if (e.altKey && !e.ctrlKey) {
       const k = typeof e.key === 'string' ? e.key.toLowerCase() : ''
       if (altMap[k]) {
         e.preventDefault()
         const ch = (e.shiftKey || capsLock) ? altMap[k].toUpperCase() : altMap[k]
         setText(t => t + ch)
-        // don't keep alt as sticky when using physical Alt
+        // nie trzymaj alt jako wciśnięty podczas używania fizycznego Alt
+        // może to zakłócać dalsze wpisywanie (poprzez użycie komend WINDOW/EDIT itp.)
         return
       }
     }
@@ -274,18 +276,18 @@ function App() {
   }
 
   function handleKeyUpPhysical(e) {
-    // update shift state when released
+    // jeśli klawisz SHIFT został zwolniony, ustaw shiftActive na false
     if (e.key === 'Shift') setShiftActive(false)
-    // remove highlight for corresponding virtual key
+    // usuń podświetlenie odpowiadającego wirtualnego klawisza
     const label = labelFromPhysicalEvent(e)
     if (label) removePressedKey(label)
-    // also update CapsLock in case it toggled on keyup
+    // również zaktualizuj CapsLock na wypadek, gdyby został przełączony podczas zwalniania klawisza
     try {
       const caps = e.getModifierState && e.getModifierState('CapsLock')
       setCapsLock(Boolean(caps))
       const alt = e.getModifierState && e.getModifierState('Alt')
       setAltActive(Boolean(alt))
-    } catch { /* ignore */ }
+    } catch { /* Ignoruj */ }
   }
 
   return (
@@ -301,64 +303,20 @@ function App() {
           placeholder="Kliknij przyciski klawiatury lub wpisz tutaj..."
         />
 
-        <div className="chat-log">
-          {chat.map(m => ( // dla każdej wiadomości w czacie
-            <div key={m.id} className="chat-item">#{m.id}: {m.value}</div> // wyświetl wiadomość (ID i wartość wiadomości)
-          ))}
-        </div>
+        <ChatLog chat={chat} />
       </div>
 
-      <div className="keyboard">
-        {rows.map((row, ri) => ( // dla każdego wiersza w układzie klawiatury
-            <div className="row" key={ri}> 
-              {row.map((k, ki) => {
-                const isLetterKey = k.length === 1 && /[a-zA-Z]/.test(k)
-                // displayLabel: show letters uppercase when CapsLock is ON, otherwise lowercase
-                let displayLabel = k
-                if (isLetterKey) {
-                  displayLabel = capsLock ? k.toUpperCase() : k.toLowerCase()
-                  // If shift is active, invert display to indicate effect
-                  if (shiftActive) displayLabel = displayLabel === displayLabel.toLowerCase() ? displayLabel.toUpperCase() : displayLabel.toLowerCase()
-                }
-
-                // For non-letter single-char keys that have shifted variants, prepare a dual-label rendering
-                const hasShiftedVariant = k.length === 1 && Object.prototype.hasOwnProperty.call(shifted, k)
-                const shiftedChar = hasShiftedVariant ? shifted[k] : null
-
-                const isCaps = k === 'Caps'
-                const isShift = k === 'Shift'
-                const isAlt = k === 'Alt'
-                const classes = ['key', k.length > 1 ? 'wide' : '']
-                if ((isCaps && capsLock) || (isShift && shiftActive) || (isAlt && altActive)) classes.push('active')
-                if (pressedKeys.includes(k)) classes.push('pressed')
-
-                const labelNode = hasShiftedVariant && !isLetterKey ? (
-                  <div className="key-label">
-                    <span className="primary">{k}</span>
-                    <span className="secondary">{shiftedChar}</span>
-                  </div>
-                ) : (
-                  displayLabel
-                )
-
-                return (
-                  <button
-                    key={ki}
-                    className={classes.join(' ')}
-                    aria-pressed={isCaps ? capsLock : isShift ? shiftActive : isAlt ? altActive : undefined}
-                    onClick={() => handleKey(k === '\\' ? '\\' : k)}
-                    onPointerDown={() => addPressedKey(k)}
-                    onPointerUp={() => removePressedKey(k)}
-                    onPointerCancel={() => removePressedKey(k)}
-                    onPointerLeave={() => removePressedKey(k)}
-                  >
-                    {labelNode}
-                  </button>
-                )
-              })}
-          </div>
-        ))}
-      </div>
+      <Keyboard
+        rows={rows}
+        shifted={shifted}
+        capsLock={capsLock}
+        shiftActive={shiftActive}
+        altActive={altActive}
+        pressedKeys={pressedKeys}
+        handleKey={handleKey}
+        addPressedKey={addPressedKey}
+        removePressedKey={removePressedKey}
+      />
     </div>
   )
 }
