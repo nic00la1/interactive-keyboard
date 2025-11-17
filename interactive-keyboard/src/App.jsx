@@ -8,6 +8,7 @@ function App() {
   const [chat, setChat] = React.useState([])
   const [capsLock, setCapsLock] = React.useState(false)
   const [shiftActive, setShiftActive] = React.useState(false)
+  const [altActive, setAltActive] = React.useState(false)
   const idRef = React.useRef(1) 
   // idRef ---> dokładnie jeden ref do przechowywania ID wiadomości czatu
 
@@ -34,6 +35,19 @@ function App() {
     ',': '<',
     '.': '>',
     '/': '?'
+  }
+
+  // Alt (AltGr) mapping for Polish diacritics when Alt is active + letter
+  const altMap = {
+    a: 'ą',
+    c: 'ć',
+    e: 'ę',
+    l: 'ł',
+    n: 'ń',
+    o: 'ó',
+    s: 'ś',
+    z: 'ż',
+    x: 'ź'
   }
 
   // Układ wierszy (ciągi znaków). Użyj '___________________________' dla długiego klawisza spacji.
@@ -97,11 +111,29 @@ function App() {
       setShiftActive(true)
       return
     }
+    if (label === 'Alt') {
+      setAltActive(v => !v)
+      return
+    }
 
     // --- CTRL I ALT nie robi nic na ten moment -----> program go ignoruje --> 
     if (label === 'Ctrl' || label === 'Alt') return
 
-    // W przeciwnym razie wstaw znak(i) 
+    // W przeciwnym razie wstaw znak(i)
+    // If Alt virtual is active and letter -> use altMap
+    const isLetter = label.length === 1 && /[a-zA-Z]/.test(label)
+    if (altActive && isLetter) {
+      const lower = label.toLowerCase()
+      const mapped = altMap[lower]
+      if (mapped) {
+        const final = (capsLock || shiftActive) ? mapped.toUpperCase() : mapped
+        setText(t => t + final)
+        if (altActive) setAltActive(false)
+        if (shiftActive) setShiftActive(false)
+        return
+      }
+    }
+
     const ch = computeChar(label)
     if (ch) {
       // Jeśli to litera, zastosuj odpowiednio logikę caps/shift
@@ -126,6 +158,77 @@ function App() {
 
     // SHIFT działa tylko dla pojedynczego naciśnięcia
     if (shiftActive) setShiftActive(false)
+    if (altActive) setAltActive(false)
+  }
+
+  // send current text as chat message (used by virtual Enter and physical Enter)
+  function sendChat() {
+    const value = text.trim()
+    const id = idRef.current++
+    if (value.length > 0) {
+      setChat(c => [...c, { id, value }])
+    }
+    setText('')
+    if (shiftActive) setShiftActive(false)
+  }
+
+  // Handlers for physical keyboard input in the textarea
+  function handleKeyDownPhysical(e) {
+    // update CapsLock visual state from modifier state
+    try {
+      const caps = e.getModifierState && e.getModifierState('CapsLock')
+      setCapsLock(Boolean(caps))
+      const alt = e.getModifierState && e.getModifierState('Alt')
+      setAltActive(Boolean(alt))
+    } catch {
+      /* Ignoruj */
+    }
+
+    // shift held
+    if (e.shiftKey) setShiftActive(true)
+
+    // Tab
+    if (e.key === 'Tab') {
+      e.preventDefault()
+      setText(t => t + '\t')
+      return
+    }
+
+    // Space
+    if (e.code === 'Space' || e.key === ' ') {
+      e.preventDefault()
+      setText(t => t + ' ')
+      return
+    }
+
+    // Alt + letter => diacritic map
+    if (e.altKey && !e.ctrlKey) {
+      const k = typeof e.key === 'string' ? e.key.toLowerCase() : ''
+      if (altMap[k]) {
+        e.preventDefault()
+        const ch = (e.shiftKey || capsLock) ? altMap[k].toUpperCase() : altMap[k]
+        setText(t => t + ch)
+        // don't keep alt as sticky when using physical Alt
+        return
+      }
+    }
+
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      sendChat()
+    }
+  }
+
+  function handleKeyUpPhysical(e) {
+    // update shift state when released
+    if (e.key === 'Shift') setShiftActive(false)
+    // also update CapsLock in case it toggled on keyup
+    try {
+      const caps = e.getModifierState && e.getModifierState('CapsLock')
+      setCapsLock(Boolean(caps))
+      const alt = e.getModifierState && e.getModifierState('Alt')
+      setAltActive(Boolean(alt))
+    } catch { /* ignore */ }
   }
 
   return (
@@ -136,6 +239,8 @@ function App() {
         <textarea
           value={text}
           onChange={e => setText(e.target.value)} // Pozwala również na wpisywanie z fizycznej klawiatury
+          onKeyDown={handleKeyDownPhysical}
+          onKeyUp={handleKeyUpPhysical}
           placeholder="Kliknij przyciski klawiatury lub wpisz tutaj..."
         />
 
@@ -148,17 +253,34 @@ function App() {
 
       <div className="keyboard">
         {rows.map((row, ri) => ( // dla każdego wiersza w układzie klawiatury
-          <div className="row" key={ri}> 
-            {row.map((k, ki) => (
-              <button
-                key={ki}
-                aria-pressed={k === 'Caps' ? capsLock : (k === 'Shift' ? shiftActive : undefined)}
-                className={['key', k.length > 1 ? 'wide' : '', (k === 'Caps' && capsLock) || (k === 'Shift' && shiftActive) ? 'active' : ''].join(' ').trim()}
-                onClick={() => handleKey(k === '\\' ? '\\' : k)}
-              >
-                {k}
-              </button>
-            ))}
+            <div className="row" key={ri}> 
+              {row.map((k, ki) => {
+                const isLetterKey = k.length === 1 && /[a-zA-Z]/.test(k)
+                // displayLabel: show letters uppercase when CapsLock is ON, otherwise lowercase
+                let displayLabel = k
+                if (isLetterKey) {
+                  displayLabel = capsLock ? k.toUpperCase() : k.toLowerCase()
+                  // If shift is active, invert display to indicate effect
+                  if (shiftActive) displayLabel = displayLabel === displayLabel.toLowerCase() ? displayLabel.toUpperCase() : displayLabel.toLowerCase()
+                }
+
+                const isCaps = k === 'Caps'
+                const isShift = k === 'Shift'
+                const isAlt = k === 'Alt'
+                const classes = ['key', k.length > 1 ? 'wide' : '']
+                if ((isCaps && capsLock) || (isShift && shiftActive) || (isAlt && altActive)) classes.push('active')
+
+                return (
+                  <button
+                    key={ki}
+                    className={classes.join(' ')}
+                    aria-pressed={isCaps ? capsLock : isShift ? shiftActive : isAlt ? altActive : undefined}
+                    onClick={() => handleKey(k === '\\' ? '\\' : k)}
+                  >
+                    {displayLabel}
+                  </button>
+                )
+              })}
           </div>
         ))}
       </div>
