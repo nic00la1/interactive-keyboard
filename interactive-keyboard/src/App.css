@@ -12,14 +12,14 @@ textarea {
     width: 100%;
     height: 150px;
     margin-bottom: 15px;
-    font-size: 16px;
+    font-size: 40px;
     padding: 10px;
     box-sizing: border-box;
     border: 1px solid #0183ee;
     border-radius: 20px;
 }
 
-/* Kontener klawiatury -> wycentrowana klawiatura*/
+/* Kontener klawiatury -> wycentrowana klawiatura */
 .keyboard {
     display: flex;
     flex-direction: column;
@@ -30,7 +30,7 @@ textarea {
 button {
     margin: 3px;
     padding: 15px 20px;
-    font-size: 14px;
+    font-size: 15px;
     cursor: pointer;
     border: 1px solid #0183ee;
     border-radius: 4px;
