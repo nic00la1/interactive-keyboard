@@ -7,6 +7,7 @@ function App() {
     <>
       <div>
         <h1>Klawiatura interaktywna</h1>
+        <textarea></textarea>
         <div className='container-grid'>
           {/* Rząd 1 - 14 Przycisków*/}
           <button>`</button>
