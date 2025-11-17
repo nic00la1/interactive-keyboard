@@ -43,3 +43,73 @@ button:hover {
     color: white;
 }
 
+/* Layout aplikacji */
+.app-root {
+    padding-bottom: 260px; /* miejsce dla przyklejonej klawiatury */
+}
+
+.input-area {
+    max-width: 900px;
+    margin: 10px auto 20px;
+}
+
+.chat-log {
+    margin-top: 12px;
+    max-height: 200px;
+    overflow: auto;
+}
+
+.chat-item {
+    padding: 6px 8px;
+    border-radius: 6px;
+    background: #f1f5fb;
+    margin-bottom: 6px;
+    border: 1px solid #e6eefb;
+}
+
+/* Klawiatura "przyklejona" do dołu ekranu*/
+.keyboard {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #ffffff;
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
+    padding: 12px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+    z-index: 1000;
+}
+
+.keyboard .row {
+    display: flex;
+    justify-content: center;
+    flex-wrap: nowrap;
+}
+
+.key {
+    min-width: 42px;
+    padding: 10px 12px;
+    margin: 3px;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.key.wide {
+    min-width: 84px;
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+/* Efekt naciśnięcia klawisza */
+.key:active {
+    transform: translateY(1px);
+}
+
+/* Zrób spację widzialną dłużej */
+.row button:nth-child(1).space {
+    min-width: 160px;
+}
+

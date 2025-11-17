@@ -1,91 +1,169 @@
-export default App
+import React from 'react'
 import './App.css'
 
 function App() {
+  // Przechowuje aktualny tekst wpisywany przez użytkownika, 
+  // historię czatu, stan klawisza Caps Lock oraz stan klawisza Shift
+  const [text, setText] = React.useState('')
+  const [chat, setChat] = React.useState([])
+  const [capsLock, setCapsLock] = React.useState(false)
+  const [shiftActive, setShiftActive] = React.useState(false)
+  const idRef = React.useRef(1) 
+  // idRef ---> dokładnie jeden ref do przechowywania ID wiadomości czatu
+
+  // Znaki, które pojawiają się po naciśnięciu klawisza Shift wraz z danym klawiszem
+  const shifted = {
+    '`': '~',
+    '1': '!',
+    '2': '@',
+    '3': '#',
+    '4': '$',
+    '5': '%',
+    '6': '^',
+    '7': '&',
+    '8': '*',
+    '9': '(',
+    '0': ')',
+    '-': '_',
+    '=': '+',
+    '[': '{',
+    ']': '}',
+    '\\': '|',
+    ';': ':',
+    "'": '"',
+    ',': '<',
+    '.': '>',
+    '/': '?'
+  }
+
+  // Układ wierszy (ciągi znaków). Użyj '___________________________' dla długiego klawisza spacji.
+  const rows = [
+    ['`','1','2','3','4','5','6','7','8','9','0','-','=','Backspace'],
+    ['Tab','Q','W','E','R','T','Y','U','I','O','P','[',']','\\'],
+    ['Caps','A','S','D','F','G','H','J','K','L',';','\'','Enter'],
+    ['Shift','Z','X','C','V','B','N','M',',','.','/','Shift'],
+    ['Ctrl','Alt','___________________________','Alt','Ctrl']
+  ]
+
+  function computeChar(label) {
+    // Zwraca znak do wstawienia zgodnie z zasadami CAPS LOCK/SHIFT
+    if (label.length === 1) {
+      const isLetter = /[a-zA-Z]/.test(label) // czy to litera
+      if (isLetter) {
+        const upper = capsLock ? label.toUpperCase() : label.toLowerCase()
+        // jeśli SHIFT jest aktywny, odwróć wielkość liter
+        return shiftActive ? (upper === label ? label.toLowerCase() : label.toUpperCase()) : (capsLock ? label.toUpperCase() : label.toLowerCase())
+      }
+      // jeśli SHIFT jest aktywny i istnieje odpowiednik w shifted, zwróć go
+      if (shiftActive && shifted[label]) return shifted[label]
+      if (shiftActive && /[a-zA-Z]/.test(label)) return label.toUpperCase() // a-zA-Z oznacza litery, które się zmieniają po naciśnięciu SHIFT
+      return label
+    }
+    return ''
+  }
+
+  function handleKey(label) {
+    if (label === 'Backspace') {
+      setText(t => t.slice(0, -1))
+      return
+    }
+    if (label === 'Tab') {
+      setText(t => t + '\t')
+      if (shiftActive) setShiftActive(false)
+      return
+    }
+    if (label === '___________________________') { // Klawisz spacji
+      setText(t => t + ' ')
+      if (shiftActive) setShiftActive(false)
+      return
+    }
+    if (label === 'Enter') {
+      // Wysłanie czatu
+      const value = text.trim()
+      const id = idRef.current++
+      if (value.length > 0) {
+        setChat(c => [...c, { id, value }]) // Dodaj wiadomość do historii czatu
+      }
+      setText('')
+      if (shiftActive) setShiftActive(false)
+      return
+    }
+    if (label === 'Caps') {
+      setCapsLock(v => !v)
+      return
+    }
+    if (label === 'Shift') {
+      // Zrób SHIFT aktywnym dla następnego naciśnięcia klawisza
+      setShiftActive(true)
+      return
+    }
+
+    // --- CTRL I ALT nie robi nic na ten moment -----> program go ignoruje --> 
+    if (label === 'Ctrl' || label === 'Alt') return
+
+    // W przeciwnym razie wstaw znak(i) 
+    const ch = computeChar(label)
+    if (ch) {
+      // Jeśli to litera, zastosuj odpowiednio logikę caps/shift
+      const finalChar = (() => {
+        if (label.length === 1 && /[a-zA-Z]/.test(label)) {
+          let base = label
+          // CAPSLOCK sprawia, że litery są wielkie
+          if (capsLock) base = base.toUpperCase()
+          else base = base.toLowerCase()
+          // jeśli SHIFT jest aktywny, odwróć wielkość liter
+          if (shiftActive) base = base === base.toLowerCase() ? base.toUpperCase() : base.toLowerCase()
+          return base
+        }
+        // jeśli SHIFT jest aktywny i istnieje odpowiednik w shifted, zwróć go
+        // (jednocyfrowe/pojedyncze znaki nie będące literami)
+        if (label.length === 1 && shifted[label] && shiftActive) return shifted[label]
+        return label
+      })()
+
+      setText(t => t + finalChar)
+    }
+
+    // SHIFT działa tylko dla pojedynczego naciśnięcia
+    if (shiftActive) setShiftActive(false)
+  }
 
   return (
-    <>
-      <div>
-        <h1>Klawiatura interaktywna</h1>
-        <textarea></textarea>
-        <div className='keyboard'>
-          {/* Rząd 1 - 14 Przycisków*/}
-          <div className='row'>
-            <button>`</button>
-            <button>1</button>
-            <button>2</button>
-            <button>3</button>
-            <button>4</button>
-            <button>5</button>
-            <button>6</button>
-            <button>7</button>
-            <button>8</button>
-            <button>9</button>
-            <button>0</button>
-            <button>-</button>
-            <button>=</button>
-            <button>⬅️ Backspace</button>
-          </div>
-          {/* Rząd 2 - 14 Przycisków*/}
-          <div className='row'>
-            <button>TAB</button>
-            <button>Q</button>
-            <button>W</button>
-            <button>E</button>
-            <button>R</button>
-            <button>T</button>
-            <button>Y</button>
-            <button>U</button>
-            <button>I</button>
-            <button>O</button>
-            <button>P</button>
-            <button>[</button>
-            <button>]</button>
-            <button>\</button>
-        </div>
-        {/* Rząd 3 - 13 Przycisków*/}
-        <div className='row'>
-          <button>CAPS</button>
-          <button>A</button>
-          <button>S</button>
-          <button>D</button>
-          <button>F</button>
-          <button>G</button>
-          <button>H</button>
-          <button>J</button>
-          <button>K</button>
-          <button>L</button>
-          <button>;</button>
-          <button>'</button>
-          <button>ENTER</button>
-          </div>
-        {/* Rząd 4 - 12 Przycisków*/}
-        <div className='row'>
-          <button>SHIFT</button>
-          <button>Z</button>
-          <button>X</button>
-          <button>C</button>
-          <button>V</button>
-          <button>B</button>
-          <button>N</button> {/* 7 przycisk w 4 rzędzie na klawiaturze  */}
-          <button>M</button>
-          <button>,</button>
-          <button>.</button>
-          <button>/</button>
-          <button>SHIFT</button>
-          </div>
-        {/* Rząd 5 - 5 Przycisków*/}
-          <div className='row'>
-            <button>CTRL</button>
-            <button>ALT</button>
-            <button>_________________</button>
-            <button>ALT</button>
-            <button>CTRL</button>
-          </div>
+    <div className="app-root">
+      <h1>Klawiatura interaktywna</h1>
+
+      <div className="input-area">
+        <textarea
+          value={text}
+          onChange={e => setText(e.target.value)} // Pozwala również na wpisywanie z fizycznej klawiatury
+          placeholder="Kliknij przyciski klawiatury lub wpisz tutaj..."
+        />
+
+        <div className="chat-log">
+          {chat.map(m => ( // dla każdej wiadomości w czacie
+            <div key={m.id} className="chat-item">#{m.id}: {m.value}</div> // wyświetl wiadomość (ID i wartość wiadomości)
+          ))}
         </div>
       </div>
-    </>
+
+      <div className="keyboard">
+        {rows.map((row, ri) => ( // dla każdego wiersza w układzie klawiatury
+          <div className="row" key={ri}> 
+            {row.map((k, ki) => (
+              <button
+                key={ki} // klawiszowi przypisany jest unikalny klucz
+                className={['key', k.length > 1 ? 'wide' : ''].join(' ')} // jeśli etykieta klawisza jest długa, nadaj mu klasę "wide", która rozszerza jego szerokość (Etykieta, czyli, nazwa klawisza, np. "Backspace" jest długa)
+                onClick={() => handleKey(k === '\\' ? '\\' : k)} 
+              >
+                {k}
+              </button>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
 
-  
+export default App
+
