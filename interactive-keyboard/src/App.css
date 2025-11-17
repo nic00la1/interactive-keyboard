@@ -1,0 +1,14 @@
+.container-grid {
+    display: grid;
+    grid-template-columns: repeat(14, 1fr);
+    gap: 5px;
+    padding: 10px;
+}
+
+/* Dzięki temu, Shift jest w 4 Rzędzie, a nie w 14 - jak to, przewidywała 
+   powyższa definicja - .container-grid -> a bardziej szczególnie
+   grid-template-columns
+*/
+.grid-column-1 {
+    grid-column: 1 / span 2;
+}
